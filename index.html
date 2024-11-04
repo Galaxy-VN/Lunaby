@@ -66,14 +66,59 @@
                 transform: translateY(-50%);
             }
 
+            /* Hiển thị bướm */
             .butterfly.fly {
-                animation: butterflyPath 3s forwards;   
+                opacity: 1;
+            }
+
+            .butterfly.landed {
+                opacity: 1;
+                transform: translate(-95px, -170%) rotate(-15deg);
+                transition: transform 0.5s ease-out;
+            }
+
+            .butterfly.fly path:not([fill="#1a1a1a"]):not([stroke="#1a1a1a"]) {
+                animation: butterflyGlow 2s ease-in-out infinite;
             }
 
             .butterfly path {
                 fill: #2596be;
-                filter: drop-shadow(0 0 5px #2596be);
+                filter: drop-shadow(0 0 2px rgba(37, 150, 190, 0.3))
+                        drop-shadow(0 0 4px rgba(37, 150, 190, 0.2))
+                        drop-shadow(0 0 6px rgba(37, 150, 190, 0.1));
+                stroke: #000;
+                stroke-width: 1;
             }
+
+            /* Riêng phần thân và râu của bướm không cần thêm stroke vì đã có sẵn */
+            .butterfly path[fill="#1a1a1a"],
+            .butterfly path[stroke="#1a1a1a"] {
+                stroke: #1a1a1a;
+            }
+
+            .butterfly-wings {
+                animation: none;
+                transform-origin: center;
+            }
+
+            /* Animation khi đang bay */
+            .butterfly.fly .butterfly-wings {
+                animation: flapWings 0.4s ease-in-out infinite alternate;
+            }
+
+            /* Dừng animation khi đã đáp */
+            .butterfly.landed .butterfly-wings {
+                animation: none;
+            }
+
+            /*  Animation cho một lần đập cánh */
+            .butterfly.landed .butterfly-wings.flap {
+                animation: flapWings 0.4s ease-in-out forwards;
+            }
+
+            /* .butterfly-wings.flap {
+                animation: flapWings 0.4s ease-in-out;
+            } */
 
             @keyframes flashEffect {
                 0% {
@@ -115,39 +160,53 @@
                 }
             }
 
+            /* Thêm animation glow cho bướm */
+            @keyframes butterflyGlow {
+                0%, 100% {
+                    filter: drop-shadow(0 0 2px rgba(37, 150, 190, 0.3))
+                        drop-shadow(0 0 4px rgba(37, 150, 190, 0.2))
+                        drop-shadow(0 0 6px rgba(37, 150, 190, 0.1));
+                }
+                50% {
+                    filter: drop-shadow(0 0 3px rgba(37, 150, 190, 0.4))
+                        drop-shadow(0 0 6px rgba(37, 150, 190, 0.3))
+                        drop-shadow(0 0 9px rgba(37, 150, 190, 0.2));
+                }
+            }
+
             @keyframes butterflyPath {
                 0% {
                     opacity: 1;
                     transform: translate(0, -50%) rotate(0deg);
                 }
-                20% {
-                    transform: translate(-20px, -80%) rotate(-15deg);
+                25% {
+                    transform: translate(-25px, -90%) rotate(-5deg);
                 }
-                40% {
-                    transform: translate(-40px, -110%) rotate(10deg);
+                50% {
+                    transform: translate(-50px, -120%) rotate(5deg);
                 }
-                60% {
-                    transform: translate(-60px, -130%) rotate(-10deg);
-                }
-                80% {
-                    transform: translate(-75px, -150%) rotate(5deg);
+                75% {
+                    transform: translate(-75px, -140%) rotate(-8deg);
                 }
                 100% {
                     opacity: 1;
-                    transform: translate(-90px, -170%) rotate(0deg);
+                    transform: translate(-95px, -170%) rotate(-15deg);
                 }
             }
 
-            .butterfly-wings {
-                animation: flapWings 0.2s ease-in-out infinite alternate;
+            .butterfly.fly {
+                animation: butterflyPath 3s forwards;
             }
 
             @keyframes flapWings {
                 0% {
                     transform: scaleX(1);
                 }
+                50% {
+                    transform: scaleX(0.7);
+                }
                 100% {
-                    transform: scaleX(0.5);
+                    transform: scaleX(1); 
                 }
             }
         </style>
@@ -158,8 +217,36 @@
             <div class="text"></div>
             <svg class="butterfly" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
                 <g class="butterfly-wings">
-                    <path d="M50 35 C20 35 20 65 50 65 C80 65 80 35 50 35 Z" />
-                    <path d="M50 35 C35 20 65 20 65 50 C65 80 35 80 35 50 Z" />
+                    <!-- Upper wings -->
+                    <path d="M50 35 
+                            C30 15, 10 25, 20 45
+                            C10 65, 30 75, 50 65
+                            C70 75, 90 65, 80 45
+                            C90 25, 70 15, 50 35
+                            Z" />
+                    <!-- Lower wings -->
+                    <path d="M50 45
+                            C35 45, 25 65, 35 80
+                            C45 90, 55 90, 65 80
+                            C75 65, 65 45, 50 45
+                            Z" />
+                    <!-- Body -->
+                    <path d="M48 30
+                            C49 35, 51 35, 52 30
+                            L50 85
+                            Z" 
+                        fill="#1a1a1a"/>
+                    <!-- Antennae -->
+                    <path d="M48 30
+                            Q40 20, 35 15"
+                        fill="none"
+                        stroke="#1a1a1a"
+                        stroke-width="1"/>
+                    <path d="M52 30
+                            Q60 20, 65 15"
+                        fill="none"
+                        stroke="#1a1a1a"
+                        stroke-width="1"/>
                 </g>
             </svg>
         </div>
@@ -182,6 +269,29 @@
 
             let lastIndex = -1;
 
+            function startRandomFlapping() {
+                const butterfly = document.querySelector('.butterfly');
+                const butterflyWings = document.querySelector('.butterfly-wings');
+                let isFlapping = false;
+                
+                function flapOnce() {
+                    if (!butterfly.classList.contains('landed')) return;
+
+                    isFlapping = true;
+                    butterflyWings.classList.add('flap');
+
+                    setTimeout(() => {
+                        butterflyWings.classList.remove('flap');
+                        isFlapping = false;
+
+                        const nextFlapDelay = Math.random() * 5000 + 3000;
+                        setTimeout(flapOnce, nextFlapDelay);
+                    }, 400);
+                }
+                
+                setTimeout(flapOnce, 1000);
+            }
+
             function flashRandomLetter() {
                 letters.forEach(letter => {
                     letter.classList.remove('flash');
@@ -191,10 +301,18 @@
                 if (flashCount >= totalFlashes) {
                     container.classList.add('reveal');
                     setTimeout(() => {
-                    container.classList.add('final');
-                    setTimeout(() => {
-                        document.querySelector('.butterfly').classList.add('fly');
-                    }, 500);
+                        container.classList.add('final');
+                        setTimeout(() => {
+                            const butterfly = document.querySelector('.butterfly');
+                            butterfly.classList.add('fly');
+
+                            // Đợi animation bay kết thúc (3s) rồi mới setup sự kiện hover
+                            setTimeout(() => {
+                                butterfly.classList.remove('fly');
+                                butterfly.classList.add('landed');
+                                startRandomFlapping();
+                            }, 3000);
+                        }, 500);
                     }, 1000);
                     return;
                 }
@@ -210,11 +328,11 @@
                 letters[randomIndex].classList.add('visible');
                 lastIndex = randomIndex;
                 flashCount++;
-
-                setTimeout(flashRandomLetter, 700);
+                
+                setTimeout(flashRandomLetter, 500);
             }
 
-            setTimeout(flashRandomLetter, 500);
+            setTimeout(flashRandomLetter, 700);
         </script>
     </body>
 </html>
